@@ -1,0 +1,5 @@
+This is a ruby script that uses Mac OS X's FSevents API and rsync to sync changes from the local file system to a remote location. It can be invoked like this:
+
+ruby syncer -u eanderson -h myhost.com -p ~/documents/workspace
+
+growlnotify must be installed on your system.
