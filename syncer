@@ -27,6 +27,11 @@ optparse = OptionParser.new do|opts|
 	opts.on( '-d', '--directory DIR', 'Base directory on remote host' ) do|dir|
 		options[:dir] = dir
 	end
+	
+	options[:exclude] = nil
+	opts.on( '-e', '--exclude-paths EXCLUDE', 'File paths to exclude from the sync' ) do|exclude|
+		options[:exclude] = exclude
+	end
 
 	# This displays the help screen, all programs are
 	# assumed to have this option.
@@ -53,12 +58,17 @@ if !options[:dir] then
 	exit
 end
 
+$exclude = ""
+if options[:exclude] then
+    $exclude = "--exclude '#{options[:exclude]}'"
+end
 
 $d=File.basename Dir.pwd
 Dir.chdir '..'
 
 fsevents_cb = proc do |stream, ctx, numEvents, paths, marks, eventIDs|
-  system "rsync -L -C --delete -rt --rsh='ssh' --exclude 'public/bundles' '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
+  
+  system "rsync -L -C --delete -rt --rsh='ssh' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
   system "growlnotify -m 'Synced #{numEvents} files'"
 end
 
@@ -80,7 +90,7 @@ FSEventStreamScheduleWithRunLoop(
 
 die "Failed to start the FSEventStream" unless FSEventStreamStart(stream)
 
-system "rsync -L -C --delete -rt --rsh='ssh' --exclude 'public/bundles' '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
+system "rsync -L -C --delete -rt --rsh='ssh' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
 
 CFRunLoopRun()
 
