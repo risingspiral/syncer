@@ -32,6 +32,11 @@ optparse = OptionParser.new do|opts|
 	opts.on( '-e', '--exclude-paths EXCLUDE', 'File paths to exclude from the sync' ) do|exclude|
 		options[:exclude] = exclude
 	end
+	
+	options[:follow] = nil
+	opts.on( '-f', '--follow-symlinks', 'Listen to symlinked directories' ) do
+		options[:follow] = true
+	end
 
 	# This displays the help screen, all programs are
 	# assumed to have this option.
@@ -64,6 +69,16 @@ if options[:exclude] then
 end
 
 $d=File.basename Dir.pwd
+$locations = [$d];
+
+if options[:follow] then
+	Dir.glob( File.join('.', '**', '*') ) { |filename|
+	    if (File.symlink?(filename)) then
+			$locations.push(File.readlink(filename))
+	    end
+	}
+end
+
 Dir.chdir '..'
 
 fsevents_cb = proc do |stream, ctx, numEvents, paths, marks, eventIDs|
@@ -76,7 +91,7 @@ stream = FSEventStreamCreate(
   KCFAllocatorDefault,
   fsevents_cb,
   nil,
-  [$d],
+  $locations,
   KFSEventStreamEventIdSinceNow,
   1.0,
   0)
