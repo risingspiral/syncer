@@ -29,7 +29,7 @@ optparse = OptionParser.new do|opts|
 	end
 	
 	options[:exclude] = nil
-	opts.on( '-e', '--exclude-paths EXCLUDE', 'File paths to exclude from the sync' ) do|exclude|
+	opts.on( '-e', '--exclude-paths EXCLUDE', 'File paths to exclude from the sync, separated by spaces' ) do|exclude|
 		options[:exclude] = exclude
 	end
 	
@@ -65,7 +65,9 @@ end
 
 $exclude = ""
 if options[:exclude] then
-    $exclude = "--exclude '#{options[:exclude]}'"
+	options[:exclude].split(/ /).each { |excludePath|
+		$exclude += "--exclude #{excludePath} "
+	}
 end
 
 $d=File.basename Dir.pwd
@@ -84,7 +86,7 @@ Dir.chdir '..'
 fsevents_cb = proc do |stream, ctx, numEvents, paths, marks, eventIDs|
   
   system "rsync -L -C --delete -rt --rsh='ssh' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
-  system "growlnotify -m 'Synced #{numEvents} files'"
+  system "growlnotify -m 'Change detected in #{numEvents} file(s)'"
 end
 
 stream = FSEventStreamCreate(
@@ -106,6 +108,7 @@ FSEventStreamScheduleWithRunLoop(
 die "Failed to start the FSEventStream" unless FSEventStreamStart(stream)
 
 system "rsync -L -C --delete -rt --rsh='ssh' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
+system "growlnotify -m 'Syncer started'"
 
 CFRunLoopRun()
 
