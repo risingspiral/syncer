@@ -18,9 +18,14 @@ optparse = OptionParser.new do|opts|
 		options[:user] = user
 	end
 
-	options[:user] = nil
+	options[:host] = nil
 	opts.on( '-H', '--host HOST', 'Remote host to connect' ) do|host|
 		options[:host] = host
+	end
+	
+	options[:port] = nil
+	opts.on( '-p', '--port PORT', 'Remote port to connect' ) do|port|
+		options[:port] = port
 	end
 
 	options[:dir] = nil
@@ -81,11 +86,17 @@ if options[:follow] then
 	}
 end
 
+if options[:port] then
+	options[:ssh] = "ssh -p#{options[:port]}"	
+else 
+	options[:ssh] = "ssh"	
+end
+
 Dir.chdir '..'
 
 fsevents_cb = proc do |stream, ctx, numEvents, paths, marks, eventIDs|
   
-  system "rsync -L -C --delete -rt --rsh='ssh' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
+  system "rsync -L -C --delete -rt --rsh='#{options[:ssh]}' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
   system "growlnotify -m 'Change detected in #{numEvents} file(s)'"
 end
 
@@ -107,7 +118,7 @@ FSEventStreamScheduleWithRunLoop(
 
 die "Failed to start the FSEventStream" unless FSEventStreamStart(stream)
 
-system "rsync -L -C --delete -rt --rsh='ssh' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
+system "rsync -L -C --delete -rt --rsh='#{options[:ssh]}' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
 system "growlnotify -m 'Syncer started'"
 
 CFRunLoopRun()
