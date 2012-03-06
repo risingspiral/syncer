@@ -43,6 +43,11 @@ optparse = OptionParser.new do|opts|
 		options[:follow] = true
 	end
 
+	options[:remove] = nil
+	opts.on( '-r', '--delete', 'Remove remote files that have been deleted locally' ) do|remove|
+		options[:remove] = '--delete'
+	end
+	
 	# This displays the help screen, all programs are
 	# assumed to have this option.
 	opts.on( '-h', '--help', 'Display this screen' ) do
@@ -96,7 +101,7 @@ Dir.chdir '..'
 
 fsevents_cb = proc do |stream, ctx, numEvents, paths, marks, eventIDs|
   
-  system "rsync -L -C --delete -rt --rsh='#{options[:ssh]}' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
+  system "rsync -L -C #{options[:remove]} -rt --rsh='#{options[:ssh]}' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
   system "growlnotify -m 'Change detected in #{numEvents} file(s)'"
 end
 
@@ -118,7 +123,7 @@ FSEventStreamScheduleWithRunLoop(
 
 die "Failed to start the FSEventStream" unless FSEventStreamStart(stream)
 
-system "rsync -L -C --delete -rt --rsh='#{options[:ssh]}' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
+system "rsync -L -C #{options[:remove]} -rt --rsh='#{options[:ssh]}' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
 system "growlnotify -m 'Syncer started'"
 
 CFRunLoopRun()
