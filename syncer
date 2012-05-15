@@ -48,6 +48,11 @@ optparse = OptionParser.new do|opts|
 		options[:remove] = '--delete'
 	end
 	
+	options[:symlink] = '-L'
+	opts.on( '-s', '--preserve-symlinks', 'Preserve symlinks' ) do
+		options[:symlink] = '-l'
+	end
+	
 	# This displays the help screen, all programs are
 	# assumed to have this option.
 	opts.on( '-h', '--help', 'Display this screen' ) do
@@ -101,7 +106,7 @@ Dir.chdir '..'
 
 fsevents_cb = proc do |stream, ctx, numEvents, paths, marks, eventIDs|
   
-  system "rsync -L -C #{options[:remove]} -rt --rsh='#{options[:ssh]}' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
+  system "rsync #{options[:symlink]} -C #{options[:remove]} -rt --rsh='#{options[:ssh]}' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
   system "growlnotify -m 'Change detected in #{numEvents} file(s)'"
 end
 
@@ -123,8 +128,7 @@ FSEventStreamScheduleWithRunLoop(
 
 die "Failed to start the FSEventStream" unless FSEventStreamStart(stream)
 
-system "rsync -L -C #{options[:remove]} -rt --rsh='#{options[:ssh]}' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
+system "rsync #{options[:symlink]} -C #{options[:remove]} -rt --rsh='#{options[:ssh]}' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
 system "growlnotify -m 'Syncer started'"
 
 CFRunLoopRun()
-
