@@ -128,6 +128,7 @@ FSEventStreamScheduleWithRunLoop(
 
 die "Failed to start the FSEventStream" unless FSEventStreamStart(stream)
 
+#print "rsync #{options[:symlink]} -C #{options[:remove]} -rt --rsh='#{options[:ssh]}' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
 system "rsync #{options[:symlink]} -C #{options[:remove]} -rt --rsh='#{options[:ssh]}' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
 system "growlnotify -m 'Syncer started'"
 
