@@ -108,12 +108,13 @@ Dir.chdir '..'
 
 $sync = "rsync #{options[:symlink]} -C #{options[:remove]} -rt --rsh='#{options[:ssh]}' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'" 
 
-system "growlnotify -m 'Syncer2.0 started'"
+system "/usr/local/bin/growlnotify -a 'Network Utility' -m 'Syncer2.0 started'"
 system $sync
 
 fsevent.watch Dir.pwd do |directories| 
+#    puts $sync
 	system $sync
- 	system "growlnotify -m 'Synced changes inside: #{directories.inspect}'"
+	system "/usr/local/bin/growlnotify -a 'Network Utility' -m 'Synced changes inside: #{directories.inspect}'"
 end
 fsevent.run
 
