@@ -108,7 +108,7 @@ Dir.chdir '..'
 
 $sync = "rsync #{options[:symlink]} -C #{options[:remove]} -rt --rsh='#{options[:ssh]}' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'" 
 
-system "growlnotify -m 'Syncer1.0 started'"
+system "growlnotify -m 'Syncer2.0 started'"
 system $sync
 
 fsevent.watch Dir.pwd do |directories| 
