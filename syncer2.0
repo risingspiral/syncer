@@ -1,0 +1,120 @@
+#!/usr/bin/ruby
+require 'rubygems'
+require 'rb-fsevent'
+require 'optparse'
+
+options = {}
+
+optparse = OptionParser.new do|opts|
+	# Set a banner, displayed at the top
+	# of the help screen.
+	opts.banner = "Usage: #{$0} [options] file1 file2 ..."
+
+	# Define the options, and what they do
+	options[:user] = nil
+	opts.on( '-u', '--user USER', 'User name for remote host' ) do|user|
+		options[:user] = user
+	end
+
+	options[:host] = nil
+	opts.on( '-H', '--host HOST', 'Remote host to connect' ) do|host|
+		options[:host] = host
+	end
+	
+	options[:port] = nil
+	opts.on( '-p', '--port PORT', 'Remote port to connect' ) do|port|
+		options[:port] = port
+	end
+
+	options[:dir] = nil
+	opts.on( '-d', '--directory DIR', 'Base directory on remote host' ) do|dir|
+		options[:dir] = dir
+	end
+	
+	options[:exclude] = nil
+	opts.on( '-e', '--exclude-paths EXCLUDE', 'File paths to exclude from the sync, separated by spaces' ) do|exclude|
+		options[:exclude] = exclude
+	end
+	
+	options[:follow] = nil
+	opts.on( '-f', '--follow-symlinks', 'Listen to symlinked directories' ) do
+		options[:follow] = true
+	end
+
+	options[:remove] = nil
+	opts.on( '-r', '--delete', 'Remove remote files that have been deleted locally' ) do|remove|
+		options[:remove] = '--delete'
+	end
+	
+	options[:symlink] = '-L'
+	opts.on( '-s', '--preserve-symlinks', 'Preserve symlinks' ) do
+		options[:symlink] = '-l'
+	end
+	
+	# This displays the help screen, all programs are
+	# assumed to have this option.
+	opts.on( '-h', '--help', 'Display this screen' ) do
+		puts opts
+		exit
+	end
+end
+
+optparse.parse!
+
+if !options[:user] then
+	puts "Please provide a user name with option -u USER or --user USER. Run #{$0} --help for more info."
+	exit
+end
+
+if !options[:host] then
+	puts "Please provide a host name with option -H HOST or --host USER. Run #{$0} --help for more info."
+	exit
+end
+
+if !options[:dir] then
+	puts "Please provide a remote directory with option -d DIR or --dir DIR. Run #{$0} --help for more info."
+	exit
+end
+
+$exclude = ""
+if options[:exclude] then
+	options[:exclude].split(/ /).each { |excludePath|
+		$exclude += "--exclude #{excludePath} "
+	}
+end
+
+$d=File.basename Dir.pwd
+$locations = [$d];
+
+if options[:follow] then
+	Dir.glob( File.join('.', '**', '*') ) { |filename|
+	    if (File.symlink?(filename)) then
+			$locations.push(File.readlink(filename))
+	    end
+	}
+end
+
+if options[:port] then
+	options[:ssh] = "ssh -p#{options[:port]}"	
+else 
+	options[:ssh] = "ssh"	
+end
+
+
+
+
+fsevent = FSEvent.new
+Dir.chdir '..'
+
+$sync = "rsync #{options[:symlink]} -C #{options[:remove]} -rt --rsh='#{options[:ssh]}' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'" 
+
+system "growlnotify -m 'Syncer1.0 started'"
+system $sync
+
+fsevent.watch Dir.pwd do |directories| 
+	system $sync
+ 	system "growlnotify -m 'Synced changes inside: #{directories.inspect}'"
+end
+fsevent.run
+
+system $sync
