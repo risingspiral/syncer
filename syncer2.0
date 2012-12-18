@@ -110,6 +110,7 @@ $sync = "rsync #{options[:symlink]} -C #{options[:remove]} -rt --rsh='#{options[
 
 system "/usr/local/bin/growlnotify -a 'Network Utility' -m 'Syncer2.0 started'"
 system $sync
+system "/usr/local/bin/growlnotify -a 'Network Utility' -m 'Initial sync complete'"
 
 fsevent.watch Dir.pwd do |directories| 
 #    puts $sync
