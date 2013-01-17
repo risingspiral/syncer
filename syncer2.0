@@ -1,9 +1,7 @@
 #!/usr/bin/ruby
-require 'osx/foundation'
+require 'rubygems'
+require 'rb-fsevent'
 require 'optparse'
-
-OSX.require_framework '/System/Library/Frameworks/CoreServices.framework/Frameworks/CarbonCore.framework'
-include OSX
 
 options = {}
 
@@ -102,34 +100,23 @@ else
 	options[:ssh] = "ssh"	
 end
 
+
+
+
+fsevent = FSEvent.new
 Dir.chdir '..'
 
-fsevents_cb = proc do |stream, ctx, numEvents, paths, marks, eventIDs|
-  
-  system "rsync #{options[:symlink]} -C #{options[:remove]} -rt --rsh='#{options[:ssh]}' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
-  system "growlnotify -m 'Change detected in #{numEvents} file(s)'"
+$sync = "rsync #{options[:symlink]} -C #{options[:remove]} -rt --rsh='#{options[:ssh]}' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'" 
+
+system "/usr/local/bin/growlnotify -a 'Network Utility' -m 'Syncer2.0 started'"
+system $sync
+system "/usr/local/bin/growlnotify -a 'Network Utility' -m 'Initial sync complete'"
+
+fsevent.watch Dir.pwd do |directories| 
+#    puts $sync
+	system $sync
+	system "/usr/local/bin/growlnotify -a 'Network Utility' -m 'Synced changes inside: #{directories.inspect}'"
 end
+fsevent.run
 
-stream = FSEventStreamCreate(
-  KCFAllocatorDefault,
-  fsevents_cb,
-  nil,
-  $locations,
-  KFSEventStreamEventIdSinceNow,
-  1.0,
-  0)
-
-die "Failed to create the FSEventStream" unless stream
-
-FSEventStreamScheduleWithRunLoop(
-  stream,
-  CFRunLoopGetCurrent(),
-  KCFRunLoopDefaultMode)
-
-die "Failed to start the FSEventStream" unless FSEventStreamStart(stream)
-
-#print "rsync #{options[:symlink]} -C #{options[:remove]} -rt --rsh='#{options[:ssh]}' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
-system "rsync #{options[:symlink]} -C #{options[:remove]} -rt --rsh='#{options[:ssh]}' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'"
-system "growlnotify -m 'Syncer started'"
-
-CFRunLoopRun()
+system $sync
