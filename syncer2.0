@@ -5,6 +5,8 @@ require 'optparse'
 
 options = {}
 
+skippableDirectories = ['.idea','.git','.svn','.cvs']
+
 optparse = OptionParser.new do|opts|
 	# Set a banner, displayed at the top
 	# of the help screen.
@@ -112,11 +114,17 @@ system "/usr/local/bin/growlnotify -a 'Network Utility' -m 'Syncer2.0 started'"
 system $sync
 system "/usr/local/bin/growlnotify -a 'Network Utility' -m 'Initial sync complete'"
 
-fsevent.watch Dir.pwd do |directories| 
-#    puts $sync
+fsevent.watch $d do |directories|
 	system $sync
-	system "/usr/local/bin/growlnotify -a 'Network Utility' -m 'Synced changes inside: #{directories.inspect}'"
+
+	if skippableDirectories.any? { |word|
+			if !directories.inspect.include?(word)
+				system "/usr/local/bin/growlnotify -a 'Network Utility' -m 'Synced changes inside: #{directories.inspect}'"
+			end
+		}
+	end
+
 end
 fsevent.run
 
-system $sync
+#system $sync
