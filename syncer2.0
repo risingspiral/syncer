@@ -117,11 +117,8 @@ system "/usr/local/bin/growlnotify -a 'Network Utility' -m 'Initial sync complet
 fsevent.watch $d do |directories|
 	system $sync
 
-	if skippableDirectories.any? { |word|
-			if !directories.inspect.include?(word)
-				system "/usr/local/bin/growlnotify -a 'Network Utility' -m 'Synced changes inside: #{directories.inspect}'"
-			end
-		}
+	if !directories.scan(Regexp.new(skippableDirectories.join('|')))
+		system "/usr/local/bin/growlnotify -a 'Network Utility' -m 'Synced changes inside: #{directories.inspect}'"
 	end
 
 end
