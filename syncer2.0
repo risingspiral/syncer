@@ -37,6 +37,11 @@ optparse = OptionParser.new do|opts|
 	opts.on( '-e', '--exclude-paths EXCLUDE', 'File paths to exclude from the sync, separated by spaces' ) do|exclude|
 		options[:exclude] = exclude
 	end
+
+	options[:include] = nil
+        opts.on( '-i', '--include-paths INCLUDE', 'File paths to include in the sync, separated by spaces' ) do|include|
+                options[:include] = include
+        end
 	
 	options[:follow] = nil
 	opts.on( '-f', '--follow-symlinks', 'Listen to symlinked directories' ) do
@@ -85,6 +90,13 @@ if options[:exclude] then
 	}
 end
 
+$include = ""
+if options[:include] then
+	options[:include].split(/ /).each { |includePath|
+		$include += "--include #{includePath}"
+	}
+end
+
 $d=File.basename Dir.pwd
 $locations = [$d];
 
@@ -108,7 +120,7 @@ end
 fsevent = FSEvent.new
 Dir.chdir '..'
 
-$sync = "rsync #{options[:symlink]} -C #{options[:remove]} -rt --rsh='#{options[:ssh]}' #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'" 
+$sync = "rsync #{options[:symlink]} -C #{options[:remove]} -rt --rsh='#{options[:ssh]}' #{$include} #{$exclude} '#{$d}' '#{options[:user]}@#{options[:host]}:#{options[:dir]}'" 
 
 system "/usr/local/bin/growlnotify -a 'Network Utility' -m 'Syncer2.0 started'"
 system $sync
